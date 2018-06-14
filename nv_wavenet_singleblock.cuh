@@ -69,7 +69,7 @@ __global__ void nv_wavenet_singleBlock_8R(nv_wavenet_params<T_weight, T_data> pa
 
     int batch_offset = blockIdx.x * BATCH_UNROLL;
 
-    const int pool_size = BATCH_UNROLL*(R + S + 2*A);
+    const int pool_size = BATCH_UNROLL*(4*R + S + 2*A);
 
     __shared__ T_data shared_pool[pool_size];
 
@@ -79,8 +79,8 @@ __global__ void nv_wavenet_singleBlock_8R(nv_wavenet_params<T_weight, T_data> pa
     //__shared__ T_data h_sh[BATCH_UNROLL][R];
     T_data (*xt_sh)[R] = (T_data (*)[R])shared_pool;
     T_data (*skip_out_sh)[S] = (T_data (*)[S])(shared_pool + BATCH_UNROLL*R);
-    T_data (*a_cur_sh)[2*R] = (T_data (*)[2*R])(shared_pool + BATCH_UNROLL*(4*R+S));
-    T_data (*h_sh)[R] = (T_data (*)[R])(shared_pool + BATCH_UNROLL*(6*R+S));
+    T_data (*a_cur_sh)[2*R] = (T_data (*)[2*R])(shared_pool + BATCH_UNROLL*(R+S+2*A));
+    T_data (*h_sh)[R] = (T_data (*)[R])(shared_pool + BATCH_UNROLL*(3*R+S+2*A));
 
 
     for (int sample = 0; sample < params.num_samples; sample++) {
@@ -229,7 +229,7 @@ __global__ void nv_wavenet_singleBlock_8R(nv_wavenet_params<T_weight, T_data> pa
             T_data (*p_sh)[A] = skip_out_final_sh;
 
             __shared__ int yOut_sh[BATCH_UNROLL];
-            softmax_select<T_data, M, A,BATCH_UNROLL>(0,BATCH_UNROLL, (T_data*)out_sh, params.dumpActivations ? (T_data*)p_sh : NULL, params.outputSelectors + sample*params.batch_size + batch_offset, yOut_sh, 1, M);
+            softmax_select<T_data, std::min(M, A), A,BATCH_UNROLL>(0,BATCH_UNROLL, (T_data*)out_sh, params.dumpActivations ? (T_data*)p_sh : NULL, params.outputSelectors + sample*params.batch_size + batch_offset, yOut_sh, 1, M);
 
             namedBarrierSync(1,M);
 

@@ -361,7 +361,7 @@ __device__ void nv_wavenet_persistent_softmax(int block_id, int batch_size, int 
 
         int col = block_id*BATCH_UNROLL;
 
-        const int NUM_THREADS=2*R;
+        const int NUM_THREADS=std::min(2*R,A);
         if (threadIdx.x < NUM_THREADS) {
 
             const int ROWS_PER_THREAD = A/NUM_THREADS;
@@ -394,7 +394,7 @@ __device__ void nv_wavenet_persistent_softmax(int block_id, int batch_size, int 
         __syncthreads();
 
         if (threadIdx.x < NUM_THREADS) {
-            softmax_select<T_data, NUM_THREADS, A,BATCH_UNROLL>(0,BATCH_UNROLL, (T_data*)out_sh, dumpActivations ? (T_data*)p_sh : NULL, outputSelectors + sample*batch_size + col, yOut_sh, 1, NUM_THREADS);
+            softmax_select<T_data, std::min(NUM_THREADS, A), A,BATCH_UNROLL>(0,BATCH_UNROLL, (T_data*)out_sh, dumpActivations ? (T_data*)p_sh : NULL, outputSelectors + sample*batch_size + col, yOut_sh, 1, NUM_THREADS);
 
             namedBarrierSync(1,NUM_THREADS);
 

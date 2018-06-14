@@ -50,7 +50,7 @@ float getSampleRateT(int num_layers, int max_dilation, int batch_size, int batch
         randomSelector[i] = (float) rand() / RAND_MAX;
     }
 
-    float randomWeights[A*A];
+    float randomWeights[R*R*16];
     for (int i=0; i<R*R*16; i++) {
         randomWeights[i] = -0.5 + static_cast <float> (rand()) / static_cast <float> (RAND_MAX); 
     }
@@ -94,8 +94,7 @@ float getSampleRate(int precision, int r, int s, int a, int num_layers, int max_
                 sample_rate = getSampleRateT<float,float,32,128,256>(num_layers, max_dilation, batch_size, batch_size_per_block, num_samples, mode);
         }
     }
-    else {
-        assert(r==64);
+    else if (r == 64) {
         if (precision == 16) {
             if (s==128) 
                 sample_rate = getSampleRateT<half2,half,64,128,256>(num_layers, max_dilation, batch_size, batch_size_per_block, num_samples, mode);
@@ -113,6 +112,11 @@ float getSampleRate(int precision, int r, int s, int a, int num_layers, int max_
             else
                 assert(false);
         }
+    }
+    else if (r == 128) {
+        assert(s==128);
+        assert(precision==32);
+        sample_rate = getSampleRateT<float,float,128,128,256>(num_layers, max_dilation, batch_size, batch_size_per_block, num_samples, mode);
     }
     return sample_rate;
 }
@@ -185,8 +189,8 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    if (r != 32 && r != 64) {
-        printf("ERROR: Only R=32,64 currently supported\n");
+    if (r != 32 && r != 64 && r != 128) {
+        printf("ERROR: Only R=32,64,128 currently supported\n");
     }
     if (s != 128 && s != 256) {
         printf("ERROR: Only S=128 and S=256 currently supported\n");
